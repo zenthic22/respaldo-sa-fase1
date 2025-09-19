@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 4001;
 // 3. Middlewares
 app.use(express.json()); // Para poder entender los JSON que lleguen en el body
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'http://localhost:5173',
   credentials: true
 }))
 app.use('/api/auth', authRoutes);
