@@ -1,0 +1,77 @@
+1️⃣ Usuario ADMIN
+
+Objetivo: Verificar que el administrador puede hacer todo.
+
+Endpoints a probar:
+
+Usuarios
+
+GET /api/users → Listar todos los usuarios.
+
+GET /api/users/:id → Ver detalles de un usuario.
+
+POST /api/users → Crear un usuario nuevo.
+
+PUT /api/users/:id → Actualizar cualquier usuario.
+
+DELETE /api/users/:id → Eliminar cualquier usuario.
+
+Roles
+
+GET /api/roles → Ver todos los roles.
+
+GET /api/roles/:id → Ver un rol específico.
+
+POST /api/roles → Crear un rol.
+
+PUT /api/roles/:id → Actualizar un rol.
+
+DELETE /api/roles/:id → Eliminar un rol.
+
+Asignación de roles
+
+POST /api/roles/assign → Asignar un rol a un usuario.
+
+DELETE /api/roles/assign → Remover un rol de un usuario.
+
+Perfiles
+
+GET /api/profiles/user/:user_id → Listar perfiles de un usuario.
+
+GET /api/profiles/:id → Ver detalles de un perfil.
+
+POST /api/profiles → Crear un perfil.
+
+PUT /api/profiles/:id → Actualizar un perfil.
+
+DELETE /api/profiles/:id → Eliminar un perfil.
+
+2️⃣ Usuario USER
+
+Objetivo: Verificar que el usuario estándar solo puede manejar su propia información y perfiles.
+
+Endpoints a probar:
+
+Usuarios
+
+GET /api/users/:id → Ver solo su información.
+
+PUT /api/users/:id → Actualizar solo su información.
+
+No puede crear ni eliminar otros usuarios.
+
+Perfiles
+
+GET /api/profiles/user/:user_id → Listar solo sus perfiles.
+
+POST /api/profiles → Crear perfiles para sí mismo.
+
+PUT /api/profiles/:id → Actualizar sus perfiles.
+
+DELETE /api/profiles/:id → Eliminar sus perfiles.
+
+Roles
+
+No puede ver, crear, actualizar ni eliminar roles.
+
+No puede asignarse roles a sí mismo ni a otros.
