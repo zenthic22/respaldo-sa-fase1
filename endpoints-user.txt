@@ -1,0 +1,31 @@
+Usuarios: /api/users
+GET: /api/users
+GET: /api/users/:id
+GET: /api/users/email/:correo_electronico
+POST: /api/users/
+PUT: /api/users/:id
+DELETE: /api/users/:id
+
+------------------------------------------------------------------------------------------
+
+Roles: /api/roles
+GET: /api/roles
+GET: /api/roles/:id
+POST: /api/roles
+PUT: /api/roles/:id
+DELETE: /api/roles/:id
+
+------------------------------------------------------------------------------------------
+
+Asignacion de roles a usuarios: /api/roles/assign
+POST: /api/roles/assign
+DELETE: /api/roles/assign
+
+------------------------------------------------------------------------------------------
+
+Perfiles de usuario: /api/profiles
+GET: /api/profiles/user/:user_id
+GET: /api/profiles/:id
+POST: /api/profiles
+PUT: /api/profiles/:id
+DELETE: /api/profiles/:id
