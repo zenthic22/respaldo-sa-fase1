@@ -21,22 +21,35 @@ const NavigationBar = () => {
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="me-auto">
-                        <Nav.Link as={Link} to="/contents">Contenido</Nav.Link>
-                        <Nav.Link as={Link} to="/genres">Generos</Nav.Link>
-                    </Nav>
-                    <Nav>
                         {user ? (
                             <NavDropdown title={`${user.name} ${user.lastname}`} id="user-nav-dropdown">
-                                {user.role == "ADMIN" && (
-                                    <NavDropdown.Item as={Link} to="/admin">Panel admin</NavDropdown.Item>
+                                {user.role === "ADMIN" ? (
+                                    <>
+                                        <NavDropdown.Item as={Link} to="/admin">
+                                            Panel administrador
+                                        </NavDropdown.Item>
+                                        <NavDropdown.Item as={Link} to="/profile-view">
+                                            Perfil
+                                        </NavDropdown.Item>
+                                    </>
+                                ) : (
+                                    <>
+                                        <NavDropdown.Item as={Link} to="/dashboard">
+                                            Dashboard
+                                        </NavDropdown.Item>
+                                        <NavDropdown.Item as={Link} to="/profile-view">
+                                            Perfil
+                                        </NavDropdown.Item>
+                                    </>
                                 )}
-                                <NavDropdown.Item as={Link} to="/profile">Perfil</NavDropdown.Item>
                                 <NavDropdown.Divider />
-                                <NavDropdown.Item onClick={handleLogout}>Cerrar sesion</NavDropdown.Item>
+                                <NavDropdown.Item onClick={handleLogout}>
+                                    Cerrar sesión
+                                </NavDropdown.Item>
                             </NavDropdown>
                         ) : (
                             <>
-                                <Nav.Link as={Link} to="/login">Iniciar sesion</Nav.Link>
+                                <Nav.Link as={Link} to="/login">Iniciar sesión</Nav.Link>
                                 <Nav.Link as={Link} to="/register">Registrarse</Nav.Link>
                             </>
                         )}
@@ -44,7 +57,7 @@ const NavigationBar = () => {
                 </Navbar.Collapse>
             </Container>
         </Navbar>
-    )
+    );
 }
 
 export default NavigationBar;

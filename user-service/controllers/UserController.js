@@ -44,7 +44,7 @@ exports.createUsuario = async (req, res) => {
       birthdate,
       sex,
       avatar_url,
-      subscription_type,
+      subscription_type
     });
 
     // Buscar el rol, por defecto "USER"
@@ -87,11 +87,14 @@ exports.validateUsuario = async (req, res) => {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
+    const roles = await UserRole.getRoleByUser(usuario.id);
+
     res.json({
       id: usuario.id,
       email: usuario.email,
       first_name: usuario.first_name,
       last_name: usuario.last_name,
+      role: roles?.[0]?.name || "USER"
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -3,7 +3,36 @@ CREATE DATABASE IF NOT EXISTS user_db
   DEFAULT COLLATE utf8mb4_0900_ai_ci;
 USE user_db;
 
--- Tabla principal de usuarios (con campos agregados)
+-- ========================
+-- TABLAS INDEPENDIENTES
+-- ========================
+
+-- Roles del sistema
+CREATE TABLE roles (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(50) NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Sistema de promociones
+CREATE TABLE promotions (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(120) NOT NULL,
+  type ENUM('PERCENT','FIXED') NOT NULL,
+  value DECIMAL(10,2) NOT NULL,
+  start_at DATETIME NOT NULL,
+  end_at DATETIME NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (end_at > start_at)
+) ENGINE=InnoDB;
+
+-- ========================
+-- TABLAS PRINCIPALES
+-- ========================
+
+-- Usuarios (con perfil activo opcional)
 CREATE TABLE users (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   username VARCHAR(50) NOT NULL UNIQUE,
@@ -28,13 +57,20 @@ CREATE TABLE users (
   UNIQUE KEY uq_users_username (username)
 ) ENGINE=InnoDB;
 
--- Roles del sistema
-CREATE TABLE roles (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(50) NOT NULL UNIQUE,
-  description TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- Perfiles de usuario
+CREATE TABLE profiles (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  avatar_url VARCHAR(500),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  KEY idx_profiles_user (user_id)
 ) ENGINE=InnoDB;
+
+-- ========================
+-- TABLAS RELACIONADAS
+-- ========================
 
 -- Asignación de roles a usuarios
 CREATE TABLE user_roles (
@@ -46,18 +82,7 @@ CREATE TABLE user_roles (
   FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Perfiles de usuario (máximo 5 por cuenta)
-CREATE TABLE profiles (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  user_id BIGINT NOT NULL,
-  name VARCHAR(80) NOT NULL,
-  avatar_url VARCHAR(500),
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  KEY idx_profiles_user (user_id)
-) ENGINE=InnoDB;
-
--- Afinidades de usuario (géneros/categorías preferidos)
+-- Afinidades de usuario
 CREATE TABLE user_affinities (
   user_id BIGINT NOT NULL,
   category_code VARCHAR(80) NOT NULL,
@@ -66,7 +91,7 @@ CREATE TABLE user_affinities (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Suscripciones de usuario
+-- Suscripciones
 CREATE TABLE subscriptions (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
@@ -77,19 +102,6 @@ CREATE TABLE subscriptions (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   KEY idx_sub_user_status (user_id, status)
-) ENGINE=InnoDB;
-
--- Sistema de promociones
-CREATE TABLE promotions (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(120) NOT NULL,
-  type ENUM('PERCENT','FIXED') NOT NULL,
-  value DECIMAL(10,2) NOT NULL,
-  start_at DATETIME NOT NULL,
-  end_at DATETIME NOT NULL,
-  active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CHECK (end_at > start_at)
 ) ENGINE=InnoDB;
 
 -- Pagos de suscripciones
@@ -108,7 +120,7 @@ CREATE TABLE subscription_payments (
   FOREIGN KEY (promotion_id) REFERENCES promotions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Asignación de promociones a usuarios
+-- Promociones asignadas a usuarios
 CREATE TABLE promotion_assignments (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   promotion_id BIGINT NOT NULL,

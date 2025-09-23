@@ -61,7 +61,23 @@ class User {
 
     // actualizar usuario
     static async update(id, data) {
-        const [result] = await db.query(`UPDATE users SET first_name=?, last_name=?, email=?, phone=?, department=?, city=?, address=?, birthdate=?, sex=?, avatar_url=?, subscription_type=?, is_blocked=?, is_verified=?, updated_at=NOW() WHERE id = ?`, [data.first_name, data.last_name, data.email, data.phone, data.department, data.city, data.address, data.birthdate, data.sex, data.avatar_url, data.subscription_type, data.is_blocked || false, data.is_verified || false, id]);
+        const fields = [];
+        const values = [];
+
+        for (const key in data) {
+            fields.push(`${key} = ?`);
+            values.push(data[key]);
+        }
+
+        if (fields.length === 0) return false;
+
+        values.push(id);
+
+        const [result] = await db.query(
+            `UPDATE users SET ${fields.join(", ")}, updated_at = NOW() WHERE id = ?`,
+            values
+        );
+
         return result.affectedRows > 0;
     }
 
