@@ -16,7 +16,11 @@ exports.createPayment = async (req, res) => {
   const { subscription_id, amount, currency, provider, provider_ref, status, paid_at, failure_reason, promotion_id } = req.body;
   try {
     const paymentId = await SubscriptionPayment.create(subscription_id, amount, currency, provider, provider_ref, status, paid_at, failure_reason, promotion_id);
-        
+    
+    if (status === "APPROVED") {
+      await Subscription.activate(subscription_id);
+    }
+    
     res.status(201).json({ message: "Pago registrado", id: paymentId });
   } catch (error) {
     res.status(500).json({ message: error.message });

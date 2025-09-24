@@ -34,7 +34,15 @@ class User {
             `INSERT INTO users (username, password, first_name, last_name, email, phone, department, city, address, birthdate, sex, avatar_url, subscription_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [data.username, data.password, data.first_name, data.last_name, data.email, data.phone, data.department, data.city, data.address, data.birthdate || null, data.sex || null, data.avatar_url || null, data.subscription_type || "FREE"]
         );
-        return result.insertId;
+        
+        const userId = result.insertId;
+
+        await db.query(
+            `INSERT INTO subscriptions (user_id, plan_code, start_date, status) VALUES (?, ?, ?, ?)`,
+            [userId, "FREE", new Date().toISOString().slice(0, 10), "ACTIVE"]
+        );
+
+        return userId;
     }
 
     // buscar usuario por ID
