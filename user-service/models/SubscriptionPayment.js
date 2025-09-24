@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const Subscription = require('../models/Subscription'); 
 
 class SubscriptionPayment {
     constructor(id, subscription_id, amount, currency, provider, provider_ref, status, paid_at, failure_reason, promotion_id) {
@@ -21,17 +22,15 @@ class SubscriptionPayment {
         );
 
         const [[sub]] = await db.query(
-            "SELECT user_id FROM subscriptions WHERE id = ?",
+            "SELECT user_id, plan_code FROM subscriptions WHERE id = ?",
             [subscription_id]
         );
 
         if (!sub) throw new Error("Suscripcion no encontrada");
 
         if (status === "APPROVED") {
-            await db.query(
-                "UPDATE users SET subscription_type = 'PREMIUM' WHERE id = ?",
-                [sub.user_id]
-            );
+            await db.query("UPDATE subscriptions SET status = 'ACTIVE' WHERE id = ?", [subscription_id])
+            await Subscription._updateUserType(sub.user_id, sub.plan_code, "ACTIVE");
         }
 
         return result.insertId;
