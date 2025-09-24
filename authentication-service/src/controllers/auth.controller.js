@@ -33,6 +33,7 @@ export const login = async (req, res, next) => {
   try {
     // 3. Llama al servicio para validar las credenciales
     const user = await UserAPIService.validateUserCredentials(email, password);
+    console.log("this is the user", user);
     // --- PRÓXIMOS PASOS ---
     // Si el usuario es válido, aquí es donde generaremos los tokens.
     // const { accessToken, refreshToken } = TokenService.generateTokens({ id: user.id });

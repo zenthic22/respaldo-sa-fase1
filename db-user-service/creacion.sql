@@ -142,3 +142,8 @@ CREATE TABLE report_actions (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (report_id) REFERENCES user_reports(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+INSERT INTO roles (name, description)
+VALUES
+  ('ADMIN', 'Administrador del sistema'),
+  ('USER', 'Usuario estándar');
