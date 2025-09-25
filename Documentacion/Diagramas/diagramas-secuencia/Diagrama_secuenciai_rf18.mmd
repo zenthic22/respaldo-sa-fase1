@@ -1,0 +1,30 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant USR as User-Service
+participant CT as Content-Service
+
+FE->>GW: Solicitud de listado "Ver más tarde"
+GW->>USR: Consulta de ítems guardados (por perfil)
+alt hay ítems
+  USR-->>GW: Devolución de ítems guardados
+  GW-->>FE: Despliegue de lista con opciones abrir/quitar
+
+  opt abrir contenido
+    FE->>GW: Apertura de ítem seleccionado
+    GW->>CT: Solicitud de detalles del contenido
+    CT-->>GW: Detalles del contenido
+    GW-->>FE: Visualización del contenido
+  end
+
+  opt quitar de "Ver más tarde"
+    FE->>GW: Solicitud de quitar de la lista
+    GW->>USR: Eliminación de relación perfil–contenido
+    USR-->>GW: Confirmación de eliminación
+    GW-->>FE: Lista actualizada sin el ítem
+  end
+else sin ítems
+  USR-->>GW: Lista vacía
+  GW-->>FE: Mensaje indicando que no hay ítems guardados
+end

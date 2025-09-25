@@ -1,0 +1,33 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant CT as Content-Service
+
+FE->>GW: Solicitud de colecciones para cada sección
+GW->>CT: Consulta de colecciones por sección
+CT-->>GW: Respuesta con colecciones por sección
+GW-->>FE: Entrega de colecciones
+
+loop por cada sección
+  alt sección con contenido
+    FE->>FE: Renderiza carrusel con tarjetas (título/imagen)
+    opt optimizaciones de UI
+      Note over FE: Precarga de imágenes / lazy loading
+    end
+  else sección sin contenido
+    FE->>FE: Oculta carrusel o muestra estado vacío
+  end
+end
+
+FE->>FE: Usuario navega carrusel con controles anterior/siguiente
+
+FE->>GW: Selección de ítem para ver detalle
+GW->>CT: Solicitud de ficha/detalle del ítem
+CT-->>GW: Respuesta con datos de detalle
+GW-->>FE: Entrega de ficha/detalle
+FE->>FE: Apertura de vista de detalle del ítem
+
+opt telemetría
+  Note over FE,CT: Registro de impresiones, clics y posición en carrusel
+end

@@ -1,0 +1,39 @@
+flowchart TB
+
+U["Usuario"] -->|HTTPS| IGW[Ingress / LoadBalancer]
+
+subgraph K8s[ Kubernetes Cluster ]
+direction TB
+
+  IGW --> FE
+  subgraph NS_FE[ app-frontend ]
+    FE["Frontend (React, Docker)"]
+    FE -->|HTTP interno| GW_SVC
+  end
+
+  subgraph NS_API[ app-backend ]
+    GW_SVC[Service ClusterIP: gateway]
+    GW["Gateway Service (Node JS, Docker)"]
+    GW_SVC --- GW
+
+    USVC["User Service (Node JS, Docker)"]
+    ASVC["Auth Service (Node JS, Docker)"]
+    CSVC["Content Service (Node JS, Docker)"]
+
+    GW --> USVC
+    GW --> ASVC
+    GW --> CSVC
+  end
+
+  subgraph NS_DATA[ app-data ]
+    UDB["User DB (MySQL, Docker)"]
+    ADB["Auth DB (MySQL, Docker)" ]
+    CDB["Content DB (MySQL, Docker)"]
+
+    USVC --> UDB
+    ASVC --> ADB
+    CSVC --> CDB
+  end
+
+  CSVC -->|SDK HTTPS| S3[(Amazon S3 Bucket fuera de K8s)]
+end

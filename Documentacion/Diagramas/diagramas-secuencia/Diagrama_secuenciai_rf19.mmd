@@ -1,0 +1,23 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant AUTH as Authentication-Service
+
+FE->>GW: Clic del usuario en "Cerrar sesión"
+GW->>AUTH: Solicitud de invalidación de sesión/token (incluye refresh si aplica)
+
+alt invalidación exitosa
+  AUTH-->>GW: Confirmación de sesión/token invalidados
+  GW-->>FE: Respuesta de cierre de sesión
+  FE->>FE: Limpieza de estado local (cookies / almacenamiento)
+  FE->>FE: Redirección automática a pantalla pública / login
+else error en invalidación
+  AUTH-->>GW: Notificación de error en cierre de sesión
+  GW-->>FE: Mensaje de error o forzar limpieza local
+  FE->>FE: Limpieza de estado local y redirección a pantalla pública
+end
+
+opt seguridad adicional
+  Note over AUTH,FE: Registro de logout en bitácora, cierre de otras sesiones activas
+end

@@ -1,0 +1,38 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant USR as User-Service
+participant CT as Content-Service
+
+FE->>GW: Acción del usuario: agregar a favoritos
+GW->>USR: Solicitud de agregado a favoritos
+USR->>CT: Verificación de existencia del contenido
+CT-->>USR: Confirmación de contenido existente
+alt contenido ya está en favoritos (duplicado)
+  USR-->>GW: Rechazo por duplicado
+  GW-->>FE: Mensaje informativo: ya está en favoritos
+else contenido no está en favoritos
+  USR-->>GW: Confirmación de agregado a favoritos (registrar fecha de agregado)
+  GW-->>FE: Mensaje de agregado exitoso
+end
+
+FE->>GW: Acción del usuario: quitar de favoritos
+GW->>USR: Solicitud de eliminación de ítem de favoritos
+USR-->>GW: Confirmación de eliminación
+GW-->>FE: Actualización de interfaz: ítem removido de la lista
+
+FE->>GW: Apertura de sección “Favoritos”
+GW->>USR: Solicitud de lista de favoritos ordenada por fecha de agregado (recientes primero)
+alt existen favoritos
+  USR-->>GW: Lista de favoritos ordenada (recientes primero)
+  GW-->>FE: Render de sección “Favoritos” con ítems ordenados
+  Note over FE: Navegación accesible a la sección “Favoritos”
+else no hay favoritos
+  USR-->>GW: Indicación de lista vacía
+  GW-->>FE: Mostrar estado vacío informativo en “Favoritos”
+end
+
+opt consideraciones de UX
+  Note over FE: Botones de agregar/quitar sincronizados, feedback inmediato y accesos consistentes a “Favoritos”
+end

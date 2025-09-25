@@ -1,0 +1,124 @@
+@startuml
+!theme plain
+left to right direction
+title User Service — ERD (MySQL)
+
+entity "users" as U {
+  * id : BIGINT <<PK>>
+  --
+  first_name : VARCHAR(80)
+  last_name  : VARCHAR(80)
+  email      : VARCHAR(150) <<UNIQUE>>
+  phone      : VARCHAR(30)
+  department : VARCHAR(100)
+  city       : VARCHAR(100)
+  address    : TEXT
+  birthdate  : DATE
+  sex        : ENUM('M','F','X')
+  avatar_url : VARCHAR(500)
+  is_blocked : BOOLEAN
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "profiles" as P {
+  * id : BIGINT <<PK>>
+  --
+  user_id : BIGINT <<FK→users.id>>
+  name : VARCHAR(80)
+  created_at : TIMESTAMP
+}
+
+' Afinidades del usuario a géneros/categorías (desacoplado del catálogo: se usa code)
+entity "user_affinities" as UA {
+  * user_id : BIGINT <<FK→users.id>>
+  * category_code : VARCHAR(80)
+  --
+  added_at : TIMESTAMP
+  <<PK (user_id, category_code)>>
+}
+
+' Suscripciones (FREE/PREMIUM)
+entity "subscriptions" as S {
+  * id : BIGINT <<PK>>
+  --
+  user_id  : BIGINT <<FK→users.id>>
+  plan_code: VARCHAR(40)   -- FREE, PREMIUM
+  start_date : DATE
+  end_date   : DATE?
+  status     : ENUM('ACTIVE','CANCELLED','EXPIRED')
+  created_at : TIMESTAMP
+}
+
+entity "subscription_payments" as SP {
+  * id : BIGINT <<PK>>
+  --
+  subscription_id : BIGINT <<FK→subscriptions.id>>
+  amount   : DECIMAL(10,2)
+  currency : VARCHAR(8)
+  provider : VARCHAR(32)
+  provider_ref : VARCHAR(128)?
+  status   : ENUM('APPROVED','FAILED')
+  paid_at  : DATETIME?
+  failure_reason : TEXT?
+}
+
+' Promos
+entity "promotions" as PR {
+  * id : BIGINT <<PK>>
+  --
+  name : VARCHAR(120)
+  type : ENUM('PERCENT','FIXED')
+  value: DECIMAL(10,2)
+  start_at : DATETIME
+  end_at   : DATETIME
+  active   : BOOLEAN
+  created_at : TIMESTAMP
+}
+
+entity "promotion_assignments" as PA {
+  * id : BIGINT <<PK>>
+  --
+  promotion_id : BIGINT <<FK→promotions.id>>
+  user_id : BIGINT <<FK→users.id>>
+  scope : ENUM('GLOBAL','ACCOUNT')
+  assigned_at : TIMESTAMP
+}
+
+' Reportes de usuarios (gestión por admins en backoffice)
+entity "user_reports" as UR {
+  * id : BIGINT <<PK>>
+  --
+  user_id : BIGINT <<FK→users.id>>
+  reason  : VARCHAR(120)
+  detail  : TEXT?
+  status  : ENUM('OPEN','IN_REVIEW','RESOLVED','BLOCKED')
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "report_actions" as RA {
+  * id : BIGINT <<PK>>
+  --
+  report_id : BIGINT <<FK→user_reports.id>>
+  admin_ref : BIGINT?  -- id del admin en otro servicio (no FK)
+  action : ENUM('NOTE','BLOCK','UNBLOCK','DISCOUNT')
+  notes  : TEXT?
+  created_at : TIMESTAMP
+}
+
+' Relaciones
+U ||--o{ P  : "tiene"
+U ||--o{ UA : "gusta de"
+U ||--o{ S  : "suscribe"
+S ||--o{ SP : "pagos"
+PR ||--o{ PA : "asigna"
+U  ||--o{ PA : "recibe"
+U  ||--o{ UR : "es reportado en"
+UR ||--o{ RA : "acciones"
+
+note bottom of P
+  Lógica de negocio: máximo 5 perfiles por usuario.
+  (Puede implementarse con trigger/validación en app)
+end note
+@enduml

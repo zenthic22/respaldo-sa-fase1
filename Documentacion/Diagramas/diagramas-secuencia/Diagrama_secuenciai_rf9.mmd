@@ -1,0 +1,25 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant USR as User-Service
+participant AUTH as Authentication-Service
+
+== Listar usuarios reportados / reportes abiertos ==
+FE->>GW: Solicitud de listado de reportes
+GW->>AUTH: Verificación de permisos (moderación)
+alt autorizado
+  AUTH-->>GW: Permisos válidos
+  GW->>USR: Consulta de reportes (abiertos y/o filtrados)
+  alt hay resultados
+    USR-->>GW: Devolución de lista de reportes (con estado y resumen)
+    GW-->>FE: Mostrar listado, paginación y filtros aplicados
+  else sin resultados
+    USR-->>GW: Lista vacía
+    GW-->>FE: Mensaje indicando que no hay reportes para mostrar
+  end
+else no autorizado
+  AUTH-->>GW: Permisos insuficientes
+  GW-->>FE: Mensaje de acceso no permitido
+end
+

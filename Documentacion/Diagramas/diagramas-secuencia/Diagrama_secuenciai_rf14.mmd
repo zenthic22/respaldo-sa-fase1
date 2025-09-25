@@ -1,0 +1,26 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant CT as Content-Service
+
+FE->>GW: Solicitud de géneros disponibles
+GW->>CT: Consulta de catálogo de géneros
+CT-->>GW: Devolución de géneros
+GW-->>FE: Muestra listado de géneros
+
+FE->>GW: Selección de un género
+GW->>CT: Solicitud de contenido por género
+alt género con resultados
+  CT-->>GW: Contenido del género seleccionado
+  GW-->>FE: Despliegue en lista / grid / carrusel
+  opt herramientas de exploración
+    FE->>GW: Aplicación de orden y/o filtros
+    GW->>CT: Actualización de consulta con orden/filtros
+    CT-->>GW: Resultados refinados
+    GW-->>FE: Vista actualizada del contenido
+  end
+else género sin contenido
+  CT-->>GW: Sin resultados
+  GW-->>FE: Mensaje indicando que no hay contenido disponible
+end

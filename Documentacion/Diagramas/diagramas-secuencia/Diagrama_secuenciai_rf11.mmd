@@ -1,0 +1,41 @@
+sequenceDiagram
+autonumber
+participant AdminFE as Frontend (Administrador)
+participant GW as API Gateway
+participant AUTH as Authentication-Service
+participant CT as Content-Service
+
+opt (Opcional) descargar plantilla
+  AdminFE->>GW: Solicitud de descarga de plantilla
+  GW->>CT: Solicitud de plantilla de importación
+  CT-->>GW: Entrega de plantilla disponible
+  GW-->>AdminFE: Descarga de plantilla
+end
+
+Note over AdminFE: Preparación del archivo con registros según la plantilla
+
+AdminFE->>GW: Carga del archivo para importación
+GW->>AUTH: Verificación de permisos de administrador
+AUTH-->>GW: Permiso válido
+GW->>CT: Envío del archivo para validación
+
+alt estructura y campos válidos
+  CT-->>GW: Previsualización generada (conteos, posibles advertencias)
+  GW-->>AdminFE: Muestra de previsualización y advertencias
+  AdminFE->>GW: Confirmación de importación
+  GW->>CT: Ejecución de importación
+  alt importación sin errores
+    CT-->>GW: Confirmación de importación completada
+    GW-->>AdminFE: Registro de resultados (todo exitoso)
+  else importación con errores parciales
+    CT-->>GW: Resultado con éxitos y errores por registro
+    GW-->>AdminFE: Registro de resultados (parcial con detalle)
+  end
+else validación fallida
+  CT-->>GW: Detalle de errores de estructura o campos obligatorios
+  GW-->>AdminFE: Mensaje de validación fallida y guía de corrección
+end
+
+opt registro y auditoría
+  Note over CT,AUTH: Almacenamiento de bitácora de importación, usuario ejecutor y marcas de tiempo
+end

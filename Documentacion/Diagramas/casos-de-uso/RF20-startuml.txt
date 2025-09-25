@@ -1,0 +1,22 @@
+@startuml
+left to right direction
+actor "Gestor de Contenido" as GC
+actor "Servicio de Catálogo (Backend)" as SC
+
+rectangle "RF-20 Migración de contenido a MongoDB" {
+  usecase "Crear/actualizar documento de contenido" as U1
+  usecase "Asociar medios, géneros y planes" as U2
+  usecase "Registrar ventanas de disponibilidad" as U3
+  usecase "Actualizar índices (texto, filtros)" as U4
+  usecase "Consultar catálogo con filtros" as U5
+}
+
+GC --> U1
+GC --> U2
+GC --> U3
+SC --> U5
+
+U1 --> U4
+U2 --> U4
+U3 --> U4
+@enduml

@@ -1,0 +1,169 @@
+@startuml
+title Content Service (MongoDB) — ERD Fase 1 + Fase 2
+!theme plain
+left to right direction
+
+' ========= Colecciones principales =========
+entity "genres\n(collection)" as GEN {
+  * _id: ObjectId <<PK>>
+  --
+  name: string <<UNIQUE>>
+  is_active: boolean = true
+  created_at: Date
+}
+
+entity "contents\n(collection)" as CNT {
+  * _id: ObjectId <<PK>>
+  --
+  title: string
+  synopsis: string?
+  released_at: Date?
+  classification: string?
+  language: string?
+  duration_minutes: int?
+  is_recommended: boolean = false
+  popularity_score: int = 0
+  created_at: Date
+  updated_at: Date?
+  --
+  genres: [ObjectId] <<ref→ genres._id>>        ' referencia (N..N)
+  plans:  [string]  <<FREE|PREMIUM|...>>        ' visibilidad por plan
+  availability: [AvailabilityWindow]            ' embebido
+  media: [MediaAsset]                           ' embebido
+}
+
+' ========= Documentos embebidos =========
+entity "AvailabilityWindow\n(embedded)" as AW {
+  start_at: Date
+  end_at:   Date
+}
+
+entity "MediaAsset\n(embedded)" as MAS {
+  type: string <<poster|still|backdrop>>
+  url:  string
+  sort_order: int = 0
+}
+
+CNT ||--o{ AW : "embeds many"
+CNT ||--o{ MAS : "embeds many"
+
+' ========= Carga masiva (opcional, si conservas auditoría de imports) =========
+entity "import_batches\n(collection)" as IB {
+  * _id: ObjectId <<PK>>
+  --
+  source_filename: string?
+  source_format: string <<CSV|XLSX|JSON>>
+  uploader_ref: string?
+  created_at: Date
+  inserted_count: int = 0
+  updated_count:  int = 0
+  rejected_count: int = 0
+}
+
+entity "import_results\n(collection)" as IR {
+  * _id: ObjectId <<PK>>
+  --
+  batch_id:  ObjectId <<ref→ import_batches._id>>
+  row_number: int
+  status: string <<INSERTED|UPDATED|REJECTED>>
+  message: string?
+  content_id: ObjectId? <<ref→ contents._id>>
+}
+
+IB ||--o{ IR
+CNT ||--o{ IR : "opcional (referencia de filas)"
+
+' ========= Listas por perfil (Fase 2) =========
+entity "profile_favorites\n(collection)" as PFV {
+  * _id: ObjectId <<PK>>
+  --
+  profile_id: ObjectId  <<ref→ users.profiles._id (ext)>>
+  content_id: ObjectId  <<ref→ contents._id>>
+  created_at: Date
+  --
+  <<UNIQUE (profile_id, content_id)>>
+}
+
+entity "profile_watch_later\n(collection)" as PWL {
+  * _id: ObjectId <<PK>>
+  --
+  profile_id: ObjectId  <<ref→ users.profiles._id (ext)>>
+  content_id: ObjectId  <<ref→ contents._id>>
+  created_at: Date
+  --
+  <<UNIQUE (profile_id, content_id)>>
+}
+
+entity "profile_recent_views\n(collection)" as PRV {
+  * _id: ObjectId <<PK>>
+  --
+  profile_id: ObjectId  <<ref→ users.profiles._id (ext)>>
+  content_id: ObjectId  <<ref→ contents._id>>
+  last_viewed_at: Date
+  --
+  <<UNIQUE (profile_id, content_id)>>
+}
+
+entity "profile_watch_again\n(collection)" as PWA {
+  * _id: ObjectId <<PK>>
+  --
+  profile_id: ObjectId  <<ref→ users.profiles._id (ext)>>
+  content_id: ObjectId  <<ref→ contents._id>>
+  created_at: Date
+  --
+  <<UNIQUE (profile_id, content_id)>>
+}
+
+' Relaciones con contents
+PFV }o--|| CNT
+PWL }o--|| CNT
+PRV }o--|| CNT
+PWA }o--|| CNT
+
+' ========= Relación contenidos ↔ géneros =========
+CNT }o--o{ GEN : "N..N via array refs (contents.genres[])"
+
+' ========= Contexto externo (User Service) =========
+entity "profiles\n(User Service — externo)" as PROF <<external>> {
+  * _id: ObjectId <<PK>>
+  user_id: ObjectId
+  name: string
+}
+PROF <.. PFV : "profile_id"
+PROF <.. PWL : "profile_id"
+PROF <.. PRV : "profile_id"
+PROF <.. PWA : "profile_id"
+
+' ========= Notas de índices =========
+note right of CNT
+Índices recomendados:
+- { title: "text", synopsis: "text" }  (búsqueda)
+- { popularity_score: -1, _id: -1 }
+- { "availability.start_at": 1, "availability.end_at": 1 }
+- { "media.sort_order": 1 } (índice parcial si se consulta por poster)
+- { plans: 1 }
+end note
+
+note right of GEN
+Índice único:
+- { name: 1 }
+end note
+
+note right of PFV
+Índices:
+- Único (profile_id, content_id)
+- { profile_id: 1, created_at: -1 } (listado reciente)
+end note
+
+note right of PRV
+Índices:
+- Único (profile_id, content_id)
+- { profile_id: 1, last_viewed_at: -1 }
+end note
+
+note right of IB
+Índices sugeridos:
+- { created_at: -1 }
+end note
+
+@enduml

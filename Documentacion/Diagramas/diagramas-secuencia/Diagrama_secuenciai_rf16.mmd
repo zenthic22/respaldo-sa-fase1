@@ -1,0 +1,29 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant CT as Content-Service
+
+FE->>GW: Solicitud de portada
+GW->>CT: Consulta de datos para portada
+CT-->>GW: Datos de portada y recomendación principal
+GW-->>FE: Entrega de información de portada
+
+FE->>FE: Renderiza módulo de recomendación (imagen grande, título, descripción)
+
+FE->>FE: Captura de clic en la recomendación
+FE->>GW: Solicitud de detalle del contenido recomendado
+GW->>CT: Consulta de detalle del contenido
+alt contenido disponible
+  CT-->>GW: Detalle del contenido
+  GW-->>FE: Entrega de detalle
+  FE->>FE: Navega y muestra la vista de detalle
+else contenido no disponible
+  CT-->>GW: Indicación de no disponible
+  GW-->>FE: Mensaje de contenido no disponible
+  FE->>FE: Ofrece volver a la portada
+end
+
+opt mejoras de UX
+  Note over FE: Precarga de imágenes y transición suave al detalle
+end

@@ -1,0 +1,20 @@
+@startuml
+left to right direction
+actor "Usuario" as U
+actor "Streaming Service" as SS
+
+rectangle "RF-22 Servicio de streaming de contenido" {
+  usecase "Solicitar video con cabecera Range" as U1
+  usecase "Validar autorización y existencia de archivo" as U2
+  usecase "Entregar fragmento (206 Partial Content)" as U3
+  usecase "Soportar seek / buffering progresivo" as U4
+  usecase "Registrar métricas de streaming" as U5
+}
+
+U --> U1
+U1 --> U2
+SS --> U2
+U2 --> U3
+U3 --> U4
+SS --> U5
+@enduml

@@ -1,0 +1,29 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant USR as User-Service
+participant AUTH as Authentication-Service
+participant CT as Content-Service
+participant PAY as Payment-Service
+
+FE->>GW: Selección del plan premium
+GW->>USR: Solicitud de información de plan premium
+USR-->>GW: Retorno de precio, términos y métodos de pago
+GW-->>FE: Muestra precio, términos y métodos de pago
+
+FE->>GW: Confirmación y envío de datos de pago
+GW->>PAY: Procesamiento de pago
+alt pago exitoso
+  PAY-->>GW: Confirmación de pago aprobado
+  GW->>USR: Actualización de perfil a plan premium
+  USR-->>GW: Confirmación de plan premium activo
+  GW-->>FE: Mensaje de activación de plan premium
+else pago rechazado
+  PAY-->>GW: Notificación de pago fallido
+  GW-->>FE: Mensaje de error en el pago
+end
+
+opt notificación adicional
+  Note over USR,FE: Envío de correo o mensaje confirmando activación del plan premium
+end

@@ -1,0 +1,29 @@
+@startuml
+title RF-23 — Pipeline CI/CD (master → build → push → deploy)
+
+actor Dev as DEV
+participant "Repo (GitHub/GitLab)" as SCM
+participant "CI Runner" as CI
+participant "Artifact Registry" as REG
+participant "Kubernetes (GKE/Minikube)" as K8S
+
+== Disparo ==
+DEV -> SCM: Push/Merge a rama master
+SCM -> CI: webhook: iniciar pipeline
+
+== Pipeline ==
+CI -> CI: Stage 1 - Lint & Tests\n(npm ci, unit/e2e)
+CI -> CI: Stage 2 - Build imágenes Docker (streaming, content, payments)
+CI -> REG: docker push images:tag (latest + sha)
+REG --> CI: OK pushed
+CI -> K8S: kubectl apply / helm upgrade (manifests con nuevas tags)
+K8S -> K8S: Crear/actualizar Deployments\n(liveness/readiness)
+
+== Verificación ==
+K8S --> CI: Pods Ready
+CI --> SCM: Status ✅ éxito (o ❌ fallo)
+note right of CI
+Si falla cualquier etapa, el pipeline se detiene y no despliega.
+end note
+
+@enduml

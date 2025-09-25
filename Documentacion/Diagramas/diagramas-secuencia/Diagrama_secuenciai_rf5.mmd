@@ -1,0 +1,23 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant USR as User-Service
+
+FE->>GW: Apertura de perfil del usuario
+GW->>USR: Solicitud de datos del perfil
+USR-->>GW: Retorno de datos actuales
+GW-->>FE: Visualización del perfil con datos cargados
+
+FE->>GW: Envío de modificaciones realizadas
+GW->>USR: Validación de formato y campos obligatorios
+
+alt validación exitosa
+  USR-->>GW: Confirmación de validación
+  GW->>USR: Persistencia de cambios en el perfil
+  USR-->>GW: Confirmación de perfil actualizado
+  GW-->>FE: Mensaje de confirmación de edición
+else error de validación
+  USR-->>GW: Notificación de error en validación
+  GW-->>FE: Mensaje indicando campos inválidos o faltantes
+end
