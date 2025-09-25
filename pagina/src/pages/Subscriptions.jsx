@@ -1,104 +1,130 @@
+// Subscriptions.jsx
 import React, { useEffect, useState } from "react";
-import { Container, Card, Button, Row, Col, Alert } from "react-bootstrap";
+import { Container, Card, Button, Row, Col, Alert, Modal, Form, Spinner } from "react-bootstrap";
 import { useAuth } from "../Auth";
 import axios from "axios";
+import { useStripe, useElements, CardNumberElement, CardExpiryElement, CardCvcElement } from "@stripe/react-stripe-js";
+
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: { fontSize: "16px", color: "#32325d", "::placeholder": { color: "#a0aec0" } },
+    invalid: { color: "#e53e3e" }
+  }
+};
 
 const Subscriptions = () => {
   const { user, login } = useAuth();
   const [subscriptions, setSubscriptions] = useState([]);
   const [message, setMessage] = useState("");
+  const [showPay, setShowPay] = useState(false);
+  const [zip, setZip] = useState("");
+  const [brand, setBrand] = useState("");
+  const [loadingPay, setLoadingPay] = useState(false);
 
-  // precios fijos de los planes
-  const PLAN_PRICES = {
-    FREE: 0,
-    PREMIUM_MONTHLY: 9.99,
-    PREMIUM_ANNUAL: 99.99,
-  };
+  const stripe = useStripe();
+  const elements = useElements();
+
+  // Solo mensual para UI
+  const PLAN_PRICES = { PREMIUM_MONTHLY: 9.99 };
 
   const fetchSubscriptions = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:3001/api/subscriptions/user/${user.id}`
-      );
-      setSubscriptions(response.data);
+      const { data } = await axios.get(`http://localhost:3001/api/subscriptions/user/${user.id}`);
+      setSubscriptions(data);
     } catch (error) {
       console.error(error);
     }
   };
 
-  useEffect(() => {
-    fetchSubscriptions();
-  }, []);
+  useEffect(() => { fetchSubscriptions(); }, []);
 
-  const handleUpgrade = async (planCode) => {
+  const activeSub = subscriptions.find((sub) => sub.status === "ACTIVE");
+
+  const openPayModal = () => {
+    setZip("");
+    setBrand("");
+    setShowPay(true);
+    setMessage("");
+  };
+
+  const handleConfirmPay = async () => {
+    if (!stripe || !elements) return;
+
+    setLoadingPay(true);
+    setMessage("");
+
     try {
-      const activeSub = subscriptions.find((sub) => sub.status === "ACTIVE");
-      let subscriptionId;
-
-      if (activeSub) {
-        // actualizar plan
-        await axios.put(
-          `http://localhost:3001/api/subscriptions/${activeSub.id}`,
-          { plan_code: planCode }
-        );
-        subscriptionId = activeSub.id;
-      } else {
-        // crear nueva
-        const response = await axios.post(
-          `http://localhost:3001/api/subscriptions`,
-          {
-            user_id: user.id,
-            plan_code: planCode,
-            status: "ACTIVE",
-          }
-        );
-        subscriptionId = response.data.id;
+      // 1) Crear PaymentMethod con tarjeta
+      const cardElement = elements.getElement(CardNumberElement);
+      const { paymentMethod, error } = await stripe.createPaymentMethod({
+        type: "card",
+        card: cardElement,
+        billing_details: {
+          name: `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.username,
+          email: user.email,
+          address: { postal_code: zip || undefined }
+        }
+      });
+      if (error) {
+        setMessage(error.message || "Error creando método de pago");
+        setLoadingPay(false);
+        return;
       }
 
-      // generar pago solo si no es FREE
-      if (planCode !== "FREE") {
-        await axios.post(`http://localhost:3001/api/payments`, {
-          subscription_id: subscriptionId,
-          amount: PLAN_PRICES[planCode],
-          currency: "Q",
-          provider: "INTERNAL",
-          provider_ref: `TXN-${Date.now()}`,
-          status: "APPROVED",
-          paid_at: new Date().toISOString().slice(0, 19).replace("T", " "),
-          failure_reason: null,
-          promotion_id: null,
-        });
+      // 2) Crear/confirmar PaymentIntent (backend crea sub PENDING y la activará al aprobar)
+      const idempotency_key = `intent-PREMIUM_MONTHLY-${user.id}-${Date.now()}`;
+      const { data } = await axios.post("http://localhost:3001/api/payments/intent", {
+        userId: user.id,
+        plan_code: "PREMIUM_MONTHLY",
+        payment_method_id: paymentMethod.id,
+        idempotency_key
+      });
+
+      // 3) 3DS si se requiere
+      if (data.requires_action && data.client_secret) {
+        const { error: actionError, paymentIntent } = await stripe.confirmCardPayment(data.client_secret);
+        if (actionError) {
+          setMessage(actionError.message || "Autenticación 3DS fallida");
+          setLoadingPay(false);
+          return;
+        }
+        if (paymentIntent?.status !== "succeeded") {
+          setMessage("El pago no se completó.");
+          setLoadingPay(false);
+          return;
+        }
+      } else if (data.status !== "succeeded") {
+        setMessage(`Estado del pago: ${data.status}.`);
+        setLoadingPay(false);
+        return;
       }
 
+      // 4) Éxito
+      await fetchSubscriptions();
       login({
         accessToken: localStorage.getItem("accessToken"),
         refreshToken: localStorage.getItem("refreshToken"),
-        user: {
-          ...user,
-          subscription_type: planCode.includes("PREMIUM") ? "PREMIUM" : "FREE",
-        },
+        user: { ...user, subscription_type: "PREMIUM" },
       });
 
-      setMessage(`Suscripción actualizada a ${planCode}`);
-      fetchSubscriptions();
-    } catch (error) {
-      console.error("Error al actualizar/crear suscripción:", error);
-      setMessage("Error al actualizar suscripción");
+      setMessage("¡Pago realizado con éxito! 🎉");
+      setShowPay(false);
+    } catch (err) {
+      console.error(err);
+      setMessage(err?.response?.data?.message || err.message || "Error al procesar el pago");
+    } finally {
+      setLoadingPay(false);
     }
   };
 
   const cancelSubscription = async (subscriptionId) => {
     try {
-      await axios.put(
-        `http://localhost:3001/api/subscriptions/${subscriptionId}/cancel`
-      );
-
+      await axios.put(`http://localhost:3001/api/subscriptions/${subscriptionId}/cancel`);
       login({
         accessToken: localStorage.getItem("accessToken"),
         refreshToken: localStorage.getItem("refreshToken"),
         user: { ...user, subscription_type: "FREE" },
       });
-
       setMessage("Tu suscripción fue cancelada.");
       fetchSubscriptions();
     } catch (error) {
@@ -107,39 +133,14 @@ const Subscriptions = () => {
     }
   };
 
-  const activeSub = subscriptions.find((sub) => sub.status === "ACTIVE");
-
   return (
     <Container className="mt-4">
       <h2>Suscripciones</h2>
       {message && <Alert variant="info">{message}</Alert>}
-      <Row>
-        {/* Plan Gratis */}
-        <Col md={4}>
-          <Card className="mb-3">
-            <Card.Body>
-              <Card.Title>Gratis</Card.Title>
-              <Card.Text>
-                Acceso limitado a contenido gratuito <br />
-                <strong>Precio: Q{PLAN_PRICES.FREE}</strong>
-              </Card.Text>
-              <Button
-                variant={
-                  user.subscription_type === "FREE"
-                    ? "secondary"
-                    : "outline-secondary"
-                }
-                disabled={user.subscription_type === "FREE"}
-                onClick={() => handleUpgrade("FREE")}
-              >
-                {user.subscription_type === "FREE" ? "Activo" : "Seleccionar"}
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
 
+      <Row>
         {/* Plan Premium Mensual */}
-        <Col md={4}>
+        <Col md={6}>
           <Card className="mb-3">
             <Card.Body>
               <Card.Title>Premium Mensual</Card.Title>
@@ -147,85 +148,105 @@ const Subscriptions = () => {
                 Acceso completo a todo el contenido por 1 mes <br />
                 <strong>Precio: Q{PLAN_PRICES.PREMIUM_MONTHLY}</strong>
               </Card.Text>
-              <Button
-                variant={
-                  subscriptions.some(
-                    (s) =>
-                      s.status === "ACTIVE" &&
-                      s.plan_code === "PREMIUM_MONTHLY"
-                  )
-                    ? "success"
-                    : "outline-success"
-                }
-                onClick={() => handleUpgrade("PREMIUM_MONTHLY")}
-              >
-                {subscriptions.some(
-                  (s) =>
-                    s.status === "ACTIVE" && s.plan_code === "PREMIUM_MONTHLY"
-                )
-                  ? "Activo"
-                  : "Seleccionar"}
-              </Button>
 
-              {activeSub &&
-                activeSub.plan_code === "PREMIUM_MONTHLY" &&
-                activeSub.status === "ACTIVE" && (
+              {/* Si ya está activo mensual, mostrar “Activo” y botón Cancelar */}
+              {activeSub && activeSub.plan_code === "PREMIUM_MONTHLY" && activeSub.status === "ACTIVE" ? (
+                <>
+                  <Button variant="success" disabled>
+                    Activo
+                  </Button>
                   <Button
                     variant="danger"
                     className="ms-2"
                     onClick={() => cancelSubscription(activeSub.id)}
                   >
-                    Cancelar
+                    Cancelar suscripción
                   </Button>
-                )}
+                </>
+              ) : (
+                <Button variant="outline-success" onClick={openPayModal}>
+                  Pagar
+                </Button>
+              )}
             </Card.Body>
           </Card>
         </Col>
 
-        {/* Plan Premium Anual */}
-        <Col md={4}>
+        {/* Plan Gratis (para volver a Free cancelando la actual) */}
+        <Col md={6}>
           <Card className="mb-3">
             <Card.Body>
-              <Card.Title>Premium Anual</Card.Title>
+              <Card.Title>Gratis</Card.Title>
               <Card.Text>
-                Acceso completo a todo el contenido por 1 año <br />
-                <strong>Precio: Q{PLAN_PRICES.PREMIUM_ANNUAL}</strong>
+                Acceso limitado a contenido gratuito <br />
+                <strong>Precio: Q0</strong>
               </Card.Text>
-              <Button
-                variant={
-                  subscriptions.some(
-                    (s) =>
-                      s.status === "ACTIVE" &&
-                      s.plan_code === "PREMIUM_ANNUAL"
-                  )
-                    ? "success"
-                    : "outline-success"
-                }
-                onClick={() => handleUpgrade("PREMIUM_ANNUAL")}
-              >
-                {subscriptions.some(
-                  (s) =>
-                    s.status === "ACTIVE" && s.plan_code === "PREMIUM_ANNUAL"
-                )
-                  ? "Activo"
-                  : "Seleccionar"}
-              </Button>
 
-              {activeSub &&
-                activeSub.plan_code === "PREMIUM_ANNUAL" &&
-                activeSub.status === "ACTIVE" && (
+              {user.subscription_type === "FREE" ? (
+                <Button variant="secondary" disabled>Activo</Button>
+              ) : (
+                activeSub && (
                   <Button
-                    variant="danger"
-                    className="ms-2"
+                    variant="outline-secondary"
                     onClick={() => cancelSubscription(activeSub.id)}
                   >
-                    Cancelar
+                    Cambiar a Gratis (cancelar)
                   </Button>
-                )}
+                )
+              )}
             </Card.Body>
           </Card>
         </Col>
       </Row>
+
+      {/* Modal de pago */}
+      <Modal show={showPay} onHide={() => setShowPay(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Pagar Premium Mensual</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Label>Número de tarjeta</Form.Label>
+            <div className="border rounded p-2">
+              <CardNumberElement
+                options={CARD_ELEMENT_OPTIONS}
+                onChange={(e) => setBrand(e.brand || "")}
+              />
+            </div>
+            <small className="text-muted">Marca detectada: {brand || "—"}</small>
+
+            <Row className="mt-3">
+              <Col>
+                <Form.Label>Vencimiento</Form.Label>
+                <div className="border rounded p-2">
+                  <CardExpiryElement options={CARD_ELEMENT_OPTIONS} />
+                </div>
+              </Col>
+              <Col>
+                <Form.Label>CVC</Form.Label>
+                <div className="border rounded p-2">
+                  <CardCvcElement options={CARD_ELEMENT_OPTIONS} />
+                </div>
+              </Col>
+            </Row>
+
+            <Form.Label className="mt-3">ZIP</Form.Label>
+            <Form.Control
+              placeholder="Código postal"
+              value={zip}
+              onChange={(e) => setZip(e.target.value)}
+            />
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowPay(false)} disabled={loadingPay}>
+            Cancelar
+          </Button>
+          <Button variant="primary" onClick={handleConfirmPay} disabled={loadingPay || !stripe || !elements}>
+            {loadingPay ? <Spinner size="sm" animation="border" /> : "Confirmar pago"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

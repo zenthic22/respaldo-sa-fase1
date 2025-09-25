@@ -2,8 +2,15 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const routes = require('./routes')
+const SubscriptionPaymentController = require('./controllers/SubscriptionPaymentController');
 
 const app = express();
+
+app.post(
+    "/api/payments/webhooks/stripe",
+    express.raw({ type: 'application/json' }),
+    SubscriptionPaymentController.stripeWebhook
+)
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
