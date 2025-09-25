@@ -1,0 +1,56 @@
+[
+  {
+    "title": "La Gran Aventura Animada",
+    "description": "Película animada con mucho humor para toda la familia.",
+    "release_date": "2020-12-20",
+    "type": "MOVIE",
+    "rating": 8.0,
+    "duration": 95,
+    "genres": [1,6]
+  },
+  {
+    "title": "Drama Intenso",
+    "description": "Una historia que explora los conflictos humanos más profundos.",
+    "release_date": "2019-05-15",
+    "type": "MOVIE",
+    "rating": 7.5,
+    "duration": 120,
+    "genres": [2]
+  },
+  {
+    "title": "Documental de la Naturaleza",
+    "description": "Obra que muestra la vida salvaje de manera realista.",
+    "release_date": "2021-08-01",
+    "type": "MOVIE",
+    "rating": 8.2,
+    "duration": 90,
+    "genres": [3]
+  },
+  {
+    "title": "Romance Bajo la Lluvia",
+    "description": "Dos personas encuentran el amor en circunstancias inesperadas.",
+    "release_date": "2022-02-14",
+    "type": "MOVIE",
+    "rating": 7.8,
+    "duration": 105,
+    "genres": [4]
+  },
+  {
+    "title": "Mundos Fantásticos",
+    "description": "Una aventura en un universo lleno de magia y criaturas increíbles.",
+    "release_date": "2023-07-22",
+    "type": "MOVIE",
+    "rating": 8.5,
+    "duration": 130,
+    "genres": [5,6]
+  },
+  {
+    "title": "Shonen Heroico",
+    "description": "Anime de acción con jóvenes protagonistas y grandes batallas.",
+    "release_date": "2021-10-10",
+    "type": "MOVIE",
+    "rating": 8.7,
+    "duration": 110,
+    "genres": [6]
+  }
+]

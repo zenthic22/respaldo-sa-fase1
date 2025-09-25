@@ -1,0 +1,100 @@
+@startuml
+!theme plain
+left to right direction
+title Content Service — ERD (MySQL)
+
+entity "genres" as GEN {
+  * id : BIGINT <<PK>>
+  --
+  name : VARCHAR(80) <<UNIQUE>>
+  is_active : BOOLEAN
+  created_at : TIMESTAMP
+}
+
+entity "contents" as CNT {
+  * id : BIGINT <<PK>>
+  --
+  title : VARCHAR(200)
+  synopsis : TEXT
+  released_at : DATE?
+  classification : VARCHAR(50)?
+  language : VARCHAR(50)?
+  duration_minutes : INT?
+  is_recommended : BOOLEAN
+  popularity_score : INT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "media_assets" as MAS {
+  * id : BIGINT <<PK>>
+  --
+  content_id : BIGINT <<FK→contents.id>>
+  type : ENUM('poster','still','backdrop')
+  url  : VARCHAR(500)
+  sort_order : INT
+}
+
+entity "content_genres" as CG {
+  * content_id : BIGINT <<FK→contents.id>>
+  * genre_id   : BIGINT <<FK→genres.id>>
+  --
+  <<PK (content_id, genre_id)>>
+}
+
+entity "availability_windows" as AW {
+  * id : BIGINT <<PK>>
+  --
+  content_id : BIGINT <<FK→contents.id>>
+  start_at   : DATETIME
+  end_at     : DATETIME
+}
+
+entity "plan_visibility" as PV {
+  * content_id : BIGINT <<FK→contents.id>>
+  * plan_code  : VARCHAR(40)  -- FREE, PREMIUM, ...
+  --
+  <<PK (content_id, plan_code)>>
+}
+
+' Carga masiva
+entity "import_batches" as IB {
+  * id : BIGINT <<PK>>
+  --
+  source_filename : VARCHAR(255)?
+  source_format   : ENUM('CSV','XLSX','JSON')
+  uploader_ref    : VARCHAR(64)?
+  created_at      : DATETIME
+  inserted_count  : INT
+  updated_count   : INT
+  rejected_count  : INT
+}
+
+entity "import_results" as IR {
+  * id : BIGINT <<PK>>
+  --
+  batch_id  : BIGINT <<FK→import_batches.id>>
+  row_number: INT
+  status    : ENUM('INSERTED','UPDATED','REJECTED')
+  message   : TEXT?
+  content_id: BIGINT <<FK nullable →contents.id>>
+}
+
+' Relaciones
+CNT ||--o{ MAS : "tiene"
+CNT ||--o{ CG  : "clasifica"
+CG  }o--|| GEN : "pertenece a"
+CNT ||--o{ AW  : "ventanas"
+CNT ||--o{ PV  : "visible en"
+IB  ||--o{ IR  : "produce"
+CNT ||--o{ IR  : "afecta (0..N)"
+
+note bottom of PV
+  plan_code como texto para evitar
+  dependencia del servicio de planes.
+end note
+
+note bottom of AW
+  Permite múltiples rangos de disponibilidad.
+end note
+@enduml

@@ -1,0 +1,30 @@
+sequenceDiagram
+autonumber
+participant AdminFE as Frontend (Backoffice)
+participant GW as API Gateway
+participant AUTH as Authentication-Service
+
+AdminFE->>GW: Navegación al login de backoffice
+GW-->>AdminFE: Despliegue del formulario de acceso
+
+AdminFE->>GW: Ingreso de usuario/contraseña
+GW->>AUTH: Validación de credenciales
+
+alt credenciales válidas
+  AUTH->>AUTH: Resolución de rol y permisos (RBAC)
+  AUTH-->>GW: Confirmación de autenticación y permisos del rol
+  alt rol autorizado para backoffice
+    GW-->>AdminFE: Inicio de sesión en consola con permisos del rol
+    Note over AdminFE: Acceso a secciones según permisos otorgados
+  else rol no autorizado
+    AUTH-->>GW: Rechazo por permisos insuficientes
+    GW-->>AdminFE: Mensaje de acceso no autorizado al backoffice
+  end
+else credenciales inválidas
+  AUTH-->>GW: Error de autenticación
+  GW-->>AdminFE: Mensaje de credenciales inválidas
+end
+
+opt medidas de seguridad
+  Note over AUTH,GW: Registro de intentos, throttling/2FA si aplica
+end

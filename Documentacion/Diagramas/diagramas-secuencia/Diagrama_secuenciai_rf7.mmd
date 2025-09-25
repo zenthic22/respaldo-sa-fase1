@@ -1,0 +1,22 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant USR as User-Service
+
+== Crear perfil ==
+FE->>GW: Apertura de gestor de perfiles
+GW->>USR: Solicitud de información básica y límites de perfiles
+USR-->>GW: Retorno de reglas y estado actual
+GW-->>FE: Mostrar formulario para nuevo perfil
+
+FE->>GW: Guardar nuevo perfil (nombre, avatar opcional, preferencias opcionales)
+GW->>USR: Creación de perfil
+alt creación exitosa
+  USR-->>GW: Confirmación de perfil creado
+  GW-->>FE: Mensaje de creación exitosa y lista actualizada de perfiles
+else creación rechazada
+  USR-->>GW: Error por validación o límite alcanzado
+  GW-->>FE: Mensaje indicando motivo del rechazo
+end
+

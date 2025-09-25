@@ -1,0 +1,46 @@
+sequenceDiagram
+autonumber
+participant AdminFE as Frontend (Administrador)
+participant GW as API Gateway
+participant AUTH as Authentication-Service
+participant CT as Content-Service
+
+AdminFE->>GW: Define nombre, tipo de descuento, valor y vigencia; 
+GW->>AUTH: Verificación de permisos de administrador
+AUTH-->>GW: Permiso válido
+GW->>CT: Solicitud de creación de promoción
+alt validación exitosa (fechas, tipo, valor)
+  CT-->>GW: Confirmación de promoción creada
+  GW-->>AdminFE: Mensaje de creación exitosa
+else validación fallida
+  CT-->>GW: Error de datos inválidos o solapamiento de vigencia
+  GW-->>AdminFE: Mensaje de error de validación
+end
+
+AdminFE->>GW: Selecciona promoción, actualiza campos y guarda
+GW->>AUTH: Verificación de permisos de administrador
+AUTH-->>GW: Permiso válido
+GW->>CT: Solicitud de actualización de promoción
+alt promoción existente y cambios válidos
+  CT-->>GW: Confirmación de promoción actualizada
+  GW-->>AdminFE: Mensaje de actualización exitosa
+else promoción no encontrada o cambios inválidos
+  CT-->>GW: Error (no encontrada / conflicto de vigencia / valor inválido)
+  GW-->>AdminFE: Mensaje de error en actualización
+end
+
+AdminFE->>GW: Selecciona promoción y confirma eliminación
+GW->>AUTH: Verificación de permisos de administrador
+AUTH-->>GW: Permiso válido
+GW->>CT: Solicitud de eliminación de promoción
+alt puede eliminarse
+  CT-->>GW: Confirmación de promoción eliminada
+  GW-->>AdminFE: Mensaje de eliminación exitosa
+else bloqueo por dependencias
+  CT-->>GW: Error (asociada a campaña activa o reglas en curso)
+  GW-->>AdminFE: Mensaje indicando que no puede eliminarse
+end
+
+opt efectos del ciclo de vida
+  Note over CT,AdminFE: Invalidación/actualización de caché del catálogo y reglas de precios
+end

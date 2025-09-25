@@ -1,0 +1,75 @@
+@startuml
+skinparam backgroundColor #fff
+skinparam node {
+  BackgroundColor #333333
+  BorderColor White
+  FontColor White
+}
+skinparam component {
+  BackgroundColor #222222
+  BorderColor White
+  FontColor White
+}
+skinparam database {
+  BackgroundColor #222222
+  BorderColor White
+  FontColor White
+}
+
+actor "Usuario" as user
+
+node "Kubernetes Cluster" {
+  
+  [Ingress / LoadBalancer] as ingress
+  
+  node "app-frontend" {
+    [Frontend (React, Docker)] as frontend
+    [Service ClusterIP: gateway] as frontend_svc
+  }
+  
+  node "app-backend" {
+    [Gateway Service (Node JS, Docker)] as gateway
+    [User Service (Node JS, Docker)] as user_svc
+    [Auth Service (Node JS, Docker)] as auth_svc
+    [Content Service (Node JS, Docker)] as content_svc
+    [Streaming Service (Node JS, Docker)] as streaming_svc
+    [Payment Service (Node JS, Docker)] as payment_svc
+  }
+  
+  node "app-data" {
+    database "User DB (MySQL, Docker)" as user_db
+    database "Auth DB (MySQL, Docker)" as auth_db
+    database "Content DB (Mongo, Docker)" as content_db
+    database "Streaming DB (Mongo, Docker)" as streaming_db
+    database "Payment DB (Mongo, Docker)" as payment_db
+  }
+}
+
+cloud "Amazon EC2 \n (fuera de K8s)" as s3
+
+' Relaciones
+user --> ingress : HTTPS
+ingress --> frontend
+frontend --> frontend_svc : HTTP interno
+frontend_svc --> gateway
+
+gateway --> user_svc
+gateway --> auth_svc
+gateway --> content_svc
+gateway --> streaming_svc
+gateway --> payment_svc
+
+user_svc --> user_db
+auth_svc --> auth_db
+content_svc --> content_db
+content_svc --> s3 : SDK HTTPS
+streaming_svc --> streaming_db
+payment_svc --> payment_db
+
+
+@enduml
+
+
+
+
+

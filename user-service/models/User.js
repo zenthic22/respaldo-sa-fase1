@@ -42,6 +42,11 @@ class User {
             [userId, "FREE", new Date().toISOString().slice(0, 10), "ACTIVE"]
         );
 
+        await db.query(
+            `INSERT INTO profiles (user_id, name, avatar_url) VALUES (?, ?, ?)`,
+            [userId, data.username, data.avatar_url || null]
+        );
+
         return userId;
     }
 

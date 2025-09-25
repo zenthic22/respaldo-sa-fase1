@@ -1,5 +1,6 @@
 import React from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import { useAuth } from "../Auth";
 
 const AdminPanel = () => {
@@ -49,6 +50,7 @@ const AdminPanel = () => {
                             <Card.Text>
                                 Subir, actualizar y eliminar videos, imagenes y archivos.
                             </Card.Text>
+                            <Button as={Link} to="/admin/content" variant="dark">Configurar contenido</Button>
                         </Card.Body>
                     </Card>
                 </Col>

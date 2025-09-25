@@ -1,0 +1,24 @@
+@startuml
+left to right direction
+actor "Desarrollador" as Dev
+actor "Pipeline CI/CD" as CI
+actor "Clúster Kubernetes" as K8s
+
+rectangle "RF-23 Despliegue en Kubernetes con CI/CD" {
+  usecase "Push/Merge en rama master" as U1
+  usecase "Ejecutar pipeline: lint + tests + build" as U2
+  usecase "Publicar imágenes en registry" as U3
+  usecase "Desplegar en Kubernetes (kubectl/helm)" as U4
+  usecase "Verificar salud (readiness/liveness)" as U5
+  usecase "Notificar estado de despliegue" as U6
+}
+
+Dev --> U1
+U1 --> CI
+CI --> U2
+U2 --> U3
+U3 --> U4
+U4 --> K8s
+CI --> U5
+CI --> U6
+@enduml

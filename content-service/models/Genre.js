@@ -1,22 +1,21 @@
 const db = require('../config/db');
 
 class Genre {
-    constructor(id, name, created_at, updated_at) {
+    constructor(id, name, description) {
         this.id = id;
         this.name = name;
-        this.created_at = created_at;
-        this.updated_at = updated_at;
+        this.description = description;
     }
 
     // Obtener todos los géneros
     static async getAll() {
         const [rows] = await db.query("SELECT * FROM genres");
-        return rows.map(row => new Genre(row.id, row.name, row.created_at, row.updated_at));
+        return rows.map(row => new Genre(row.id, row.name, row.description));
     }
 
     // Crear un nuevo género
-    static async create(name) {
-        const [result] = await db.query("INSERT INTO genres (name) VALUES (?)", [name]);
+    static async create(name, description) {
+        const [result] = await db.query("INSERT INTO genres (name, description) VALUES (?, ?)", [name, description]);
         return result.insertId;
     }
 
@@ -31,8 +30,8 @@ class Genre {
     // Actualizar género
     static async update(id, data) {
         const [result] = await db.query(
-            `UPDATE genres SET name=? WHERE id=?`,
-            [data.name, id]
+            `UPDATE genres SET name=?, description=? WHERE id=?`,
+            [data.name, data.description, id]
         );
         return result.affectedRows > 0;
     }

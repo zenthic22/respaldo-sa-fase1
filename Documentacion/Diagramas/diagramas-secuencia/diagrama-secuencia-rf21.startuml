@@ -1,0 +1,35 @@
+@startuml
+title RF-21 — Pago Premium con Stripe (modo test)
+
+actor Usuario as U
+participant "Frontend (Web)" as FE
+participant "Payments Service" as PAY
+participant "Stripe API" as STR
+database "DB Subs (Mongo)" as DB
+
+== Inicio ==
+U -> FE: Clic "Actualizar a Premium"
+FE -> STR: createPaymentMethod(card) (Stripe.js)
+STR --> FE: paymentMethod.id (pm_xxx)
+
+== Crear & confirmar PaymentIntent ==
+FE -> PAY: POST /payments/create { userId, payment_method_id }
+PAY -> STR: PaymentIntents.create({ amount, currency, payment_method, confirm:true, automatic_payment_methods:{enabled:true, allow_redirects:'never'} })
+STR --> PAY: status = succeeded | requires_action | failed
+
+alt succeeded
+  PAY -> DB: upsert { userId, plan:'PREMIUM', updated_at: now }
+  DB --> PAY: OK
+  PAY --> FE: { status:'succeeded' }
+  FE -> U: Mostrar éxito (Plan: PREMIUM)
+else requires_action
+  PAY --> FE: { status:'requires_action', client_secret }
+  note right of FE
+    (Opcional) Manejar 3DS/acciones adicionales
+  end note
+else failed
+  PAY --> FE: { status:'failed', error }
+  FE -> U: Mostrar error
+end
+
+@enduml

@@ -1,0 +1,33 @@
+@startuml
+title RF-20 — Consulta de catálogo en MongoDB
+
+actor Usuario as U
+participant "Frontend (Web)" as FE
+participant "Content Service (Mongo)" as CNT
+database "MongoDB (contentdb)" as MDB
+
+== Home / Catálogo ==
+U -> FE: Abrir Home (plan: FREE/PREMIUM)
+FE -> CNT: GET /catalog?plan=FREE
+CNT -> MDB: find({ plans:'FREE', availability: { $elemMatch: { start_at:{$lte:now}, end_at:{$gte:now} } } })\n.sort({ popularity_score:-1, _id:-1 }).select(title, media.poster)
+MDB --> CNT: Lista de contenidos
+CNT --> FE: 200 OK [ {id, title, poster_url}, ... ]
+FE -> U: Renderizar carruseles
+
+== Búsqueda ==
+U -> FE: Buscar "amor"
+FE -> CNT: GET /catalog/search?q=amor&plan=FREE
+CNT -> MDB: find({ $text: { $search:'amor' }, plans:'FREE', availability: ventana vigente })\n.sort({ created_at:-1 }).limit(50)
+MDB --> CNT: Resultados
+CNT --> FE: 200 OK [ {id, title, poster_url}, ... ]
+FE -> U: Mostrar resultados
+
+== Detalle ==
+U -> FE: Clic en un ítem
+FE -> CNT: GET /contents/{id}
+CNT -> MDB: findById({id})
+MDB --> CNT: Documento de contenido (media, genres, availability, etc.)
+CNT --> FE: 200 OK { ...detalle... }
+FE -> U: Mostrar ficha
+
+@enduml

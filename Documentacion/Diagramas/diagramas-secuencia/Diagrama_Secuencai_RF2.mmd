@@ -1,0 +1,34 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant AUTH as Authentication-Service
+
+FE->>GW: Ingreso de identificador y contraseña
+GW->>AUTH: Verificación de existencia de la cuenta
+
+alt cuenta existe
+  AUTH-->>GW: Confirmación de existencia
+  GW->>AUTH: Validación de cuenta confirmada
+  alt cuenta confirmada
+    AUTH-->>GW: Confirmación de cuenta confirmada
+    GW->>AUTH: Validación de credenciales
+    alt credenciales válidas
+      AUTH-->>GW: Inicio de sesión exitoso
+      GW-->>FE: Retorno de confirmación de inicio de sesión
+    else credenciales inválidas
+      AUTH-->>GW: Error por credenciales inválidas
+      GW-->>FE: Mensaje de credenciales inválidas
+    end
+  else cuenta no confirmada
+    AUTH-->>GW: Error por cuenta no confirmada
+    GW-->>FE: Mensaje indicando verificación pendiente
+  end
+else cuenta no existe
+  AUTH-->>GW: Error por cuenta inexistente
+  GW-->>FE: Mensaje de usuario no encontrado
+end
+
+opt medidas adicionales
+  Note over AUTH: Registro de intento fallido / posible bloqueo temporal
+end

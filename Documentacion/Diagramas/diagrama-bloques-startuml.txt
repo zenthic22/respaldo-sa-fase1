@@ -1,0 +1,41 @@
+@startuml
+left to right direction
+
+actor Usuario
+actor Administrador
+actor "Gestor de Contenido" as GestorContenido
+
+rectangle "Interfaz Web/App" {
+  usecase "Gestión de Usuarios" as GU
+  usecase "Gestión de Contenido" as GC
+  usecase "Catálogo & Recomendaciones" as CR
+  usecase "Visualización de Películas" as VP
+  usecase "Favoritos / Ver Luego" as FV
+  usecase "Gestión de Suscripción" as GS
+  usecase "Ver películas en streaming" as PS
+  usecase "Pagar en línea con tarjeta" as PT
+}
+
+rectangle "Base de Datos" as BD
+
+Usuario --> CR
+Usuario --> VP
+Usuario --> FV
+Usuario --> GS
+Usuario --> PS
+Usuario --> PT
+
+Administrador --> GU
+Administrador --> GC
+
+GestorContenido --> GC
+
+GU --> BD
+GC --> BD
+CR --> BD
+VP --> BD
+FV --> BD
+GS --> BD
+PS --> BD
+PT --> BD
+@enduml

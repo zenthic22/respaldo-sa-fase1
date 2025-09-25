@@ -1,0 +1,38 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant AUTH as Authentication-Service
+participant USR as User-Service
+participant CT as Content-Service
+
+Note over FE: El usuario completa el formulario de registro con sus datos
+
+FE->>GW: Envío de campos a llenar para registro
+GW->>AUTH: Validación de identidad (correo, usuario)
+
+alt identidad creada
+  AUTH-->>GW: Confirmación de identidad creada
+  GW->>USR: Creación de perfil de usuario
+  par validación de categorías de afinidad
+    USR->>CT: Solicitud de validación de categorías
+    CT-->>USR: Confirmación de categorías válidas
+  and guardado del perfil
+    USR-->>GW: Confirmación de perfil creado
+  end
+  GW-->>FE: Mensaje de registro exitoso
+else conflicto de datos
+  AUTH-->>GW: Error de identidad existente
+  GW-->>FE: Mensaje de correo o usuario ya registrado
+end
+
+break fallos en creación de perfil
+  USR-->>GW: Error en creación de perfil o categorías inválidas
+  GW->>AUTH: Solicitud de eliminación de identidad creada
+  AUTH-->>GW: Confirmación de eliminación
+  GW-->>FE: Mensaje de perfil no creado
+end
+
+opt pasos opcionales
+  Note over AUTH: Envío de correo o SMS de verificación
+end

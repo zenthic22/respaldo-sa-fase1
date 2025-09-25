@@ -1,0 +1,30 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant AUTH as Authentication-Service
+participant USR as User-Service
+participant CT as Content-Service
+
+Note over AUTH,USR: Tras el registro, se asigna el plan gratuito por defecto al perfil
+AUTH->>USR: Asignación de plan gratuito al usuario
+USR-->>AUTH: Confirmación de plan asignado
+
+FE->>GW: Navegación y solicitud de contenido
+GW->>CT: Consulta de disponibilidad de contenido
+CT->>USR: Verificación de plan y permisos asociados
+USR-->>CT: Confirmación del plan y reglas de acceso
+
+alt contenido permitido por el plan gratuito
+  CT-->>GW: Disponibilidad confirmada con reglas de limitación
+  Note over CT,FE: Aplicación de limitaciones del plan gratuito<br/>• Catálogo parcial • Calidad limitada • Concurrencia reducida<br/>• Límite de reproducciones/día • Publicidad/pausas
+  GW-->>FE: Entrega de contenido con restricciones activas
+else contenido restringido por el plan
+  CT-->>GW: Acceso denegado por límites del plan
+  GW-->>FE: Mensaje indicando restricción por plan gratuito
+end
+
+opt agotamiento de cuota o regla en tiempo de uso
+  CT-->>GW: Notificación de límite alcanzado (p. ej., reproducciones diarias)
+  GW-->>FE: Mensaje de límite alcanzado y opciones para continuar
+end

@@ -1,0 +1,13 @@
+Para probar curl que funciona:
+curl -I http://localhost:4000/stream/sample.mp4
+
+Se debe de apuntar a la URL: /stream/:file
+donde file es el nombre de la pelicula "nombre.mp4" 
+
+Las películas .mp4 como tal estarían guardadas en la carpeta videos 
+
+Creo que las peliculas estarían así:
+- sample1.mp4
+- sample2.mp4
+- sample3.mp4
+... etc

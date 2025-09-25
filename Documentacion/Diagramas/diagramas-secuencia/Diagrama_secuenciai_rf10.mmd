@@ -1,0 +1,53 @@
+sequenceDiagram
+autonumber
+participant FE as Frontend (SPA)
+participant GW as API Gateway
+participant CT as Content-Service
+participant AUTH as Authentication-Service
+participant ST as Storage (Archivos)
+
+FE->>GW: Apertura de creación de contenido
+GW->>AUTH: Verificación de permisos de editor/administrador
+alt autorizado
+  AUTH-->>GW: Permisos válidos
+  GW-->>FE: Mostrar formulario (título, descripción, archivos, plan objetivo, categorías, disponibilidad)
+else no autorizado
+  AUTH-->>GW: Permisos insuficientes
+  GW-->>FE: Mensaje de acceso no permitido
+end
+
+opt preparación de archivos
+  FE->>GW: Solicitud para subir archivo(s)
+  GW->>CT: Solicitud de preparación de carga (metadatos)
+  CT->>ST: Generación de ubicaciones/URLs de carga
+  ST-->>CT: Confirmación de ubicaciones de carga
+  CT-->>GW: Entrega de instrucciones de subida
+  GW-->>FE: Habilitar subida de archivo(s)
+  FE->>ST: Subida de archivo(s)
+  ST-->>FE: Confirmación de carga
+end
+
+FE->>GW: Guardar contenido con configuración elegida
+GW->>CT: Validación de datos y reglas
+par validaciones
+  CT-->>GW: Validación de título y descripción
+  CT-->>GW: Validación de público objetivo por plan (p. ej., gratuito)
+  CT-->>GW: Validación de categorías
+  CT-->>GW: Validación de disponibilidad (fecha inicio/fin)
+and verificación de archivos
+  CT->>ST: Comprobación de archivos presentes y accesibles
+  ST-->>CT: Confirmación de archivos
+end
+
+alt validación exitosa
+  GW->>CT: Persistencia de contenido y programación de disponibilidad
+  CT-->>GW: Confirmación de contenido creado/actualizado
+  GW-->>FE: Mensaje de guardado exitoso
+else error de validación
+  CT-->>GW: Notificación de errores (formato, categorías, fechas, archivos)
+  GW-->>FE: Mensaje con detalles de corrección
+end
+
+opt programación y publicación
+  Note over CT: Programación para activar en fecha de inicio y expirar en fecha de fin
+end

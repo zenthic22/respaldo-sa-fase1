@@ -1,0 +1,135 @@
+@startuml
+!theme plain
+left to right direction
+title Auth Service — ERD (MySQL)
+
+entity "identities" as ID {
+  * id : BIGINT <<PK>>
+  --
+  context : ENUM('CONSUMER','BACKOFFICE')
+  subject_id : BIGINT        -- id en el servicio correspondiente (sin FK)
+  is_active  : BOOLEAN
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+' múltiples formas de login para una identidad (email/username)
+entity "principals" as PRN {
+  * id : BIGINT <<PK>>
+  --
+  identity_id : BIGINT <<FK→identities.id>>
+  type  : ENUM('EMAIL','USERNAME')
+  value_norm : VARCHAR(150) <<UNIQUE>>
+  created_at : TIMESTAMP
+}
+
+' credenciales de contraseña (bcrypt cost 10) — RNF-1
+entity "password_credentials" as PC {
+  * identity_id : BIGINT <<FK→identities.id>>
+  --
+  password_hash : VARCHAR(255)
+  algo : VARCHAR(20)         -- bcrypt
+  cost : TINYINT             -- 10
+  created_at : TIMESTAMP
+  <<PK (identity_id)>>
+}
+
+' MFA obligatorio para BACKOFFICE — RNF-SEG-02
+entity "mfa_secrets" as MFA {
+  * identity_id : BIGINT <<FK→identities.id>>
+  --
+  secret : VARCHAR(128)
+  enabled : BOOLEAN
+  created_at : TIMESTAMP
+  <<PK (identity_id)>>
+}
+
+' sesiones/refresh tokens (logout = revoked)
+entity "sessions" as SES {
+  * id : BIGINT <<PK>>
+  --
+  identity_id : BIGINT <<FK→identities.id>>
+  refresh_token_hash : VARCHAR(255) <<UNIQUE>>
+  issued_at  : DATETIME
+  expires_at : DATETIME
+  revoked    : BOOLEAN
+  revoked_at : DATETIME?
+}
+
+' email verify & password reset
+entity "verification_tokens" as VT {
+  * id : BIGINT <<PK>>
+  --
+  identity_id : BIGINT <<FK→identities.id>>
+  token : CHAR(64) <<UNIQUE>>
+  expires_at : DATETIME
+  used : BOOLEAN
+  created_at : TIMESTAMP
+}
+
+entity "reset_tokens" as RT {
+  * id : BIGINT <<PK>>
+  --
+  identity_id : BIGINT <<FK→identities.id>>
+  token : CHAR(64) <<UNIQUE>>
+  expires_at : DATETIME
+  used : BOOLEAN
+  created_at : TIMESTAMP
+}
+
+' antifuerza bruta / lockout — RNF-SEG-02
+entity "login_attempts" as LA {
+  * id : BIGINT <<PK>>
+  --
+  principal : VARCHAR(150)
+  context   : ENUM('CONSUMER','BACKOFFICE')
+  success   : BOOLEAN
+  created_at : DATETIME
+}
+
+entity "account_lockouts" as LO {
+  * id : BIGINT <<PK>>
+  --
+  context    : ENUM('CONSUMER','BACKOFFICE')
+  subject_id : BIGINT
+  locked_until : DATETIME
+  failed_count : INT
+  updated_at : DATETIME
+  -- UNIQUE(context, subject_id)
+}
+
+' backoffice identities mínimas (perfil administrativo)
+entity "backoffice_users" as BO {
+  * id : BIGINT <<PK>>
+  --
+  email_norm : VARCHAR(150) <<UNIQUE>>
+  display_name : VARCHAR(120)?
+  created_at : TIMESTAMP
+}
+
+entity "roles" as RO {
+  * id : INT <<PK>>
+  --
+  code : VARCHAR(40) <<UNIQUE>>  -- ADMIN, CONTENT_MANAGER
+  name : VARCHAR(80)
+}
+
+entity "backoffice_user_roles" as BUR {
+  * user_id : BIGINT <<FK→backoffice_users.id>>
+  * role_id : INT <<FK→roles.id>>
+  --
+  <<PK (user_id, role_id)>>
+}
+
+' Relaciones
+ID ||--o{ PRN : "tiene"
+ID ||--|| PC  : "credencial"
+ID ||--|| MFA : "mfa"
+ID ||--o{ SES : "sesiones"
+ID ||--o{ VT  : "verify"
+ID ||--o{ RT  : "reset"
+
+BO ||--o{ BUR : "roles"
+RO ||--o{ BUR : ""
+
+@enduml

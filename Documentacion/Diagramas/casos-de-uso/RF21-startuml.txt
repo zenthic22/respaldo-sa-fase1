@@ -1,0 +1,21 @@
+@startuml
+left to right direction
+actor "Usuario" as U
+actor "Payment Service" as PS
+actor "Stripe" as ST
+
+rectangle "RF-21 Servicio de pagos (Stripe, tokenización, planes Premium)" {
+  usecase "Crear método de pago (token)" as U1
+  usecase "Confirmar PaymentIntent" as U2
+  usecase "Procesar respuesta (succeeded/failed)" as U3
+  usecase "Actualizar plan a PREMIUM" as U4
+}
+
+U --> U1
+U1 --> ST
+PS --> U2
+U2 --> ST
+ST --> U3
+PS --> U3
+U3 --> U4
+@enduml
