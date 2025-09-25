@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Animación",
+    "description": "Contenido animado para todas las edades, desde caricaturas hasta anime."
+  },
+  {
+    "name": "Drama",
+    "description": "Historias centradas en el desarrollo emocional y conflictos humanos."
+  },
+  {
+    "name": "Documental",
+    "description": "Obras audiovisuales que muestran hechos de la vida real."
+  },
+  {
+    "name": "Romance",
+    "description": "Películas que giran en torno a relaciones amorosas."
+  },
+  {
+    "name": "Fantástico",
+    "description": "Mundos imaginarios con elementos sobrenaturales o mágicos."
+  },
+  {
+    "name": "Shonen",
+    "description": "Anime/manga de acción y aventura enfocado en jóvenes protagonistas."
+  }
+]

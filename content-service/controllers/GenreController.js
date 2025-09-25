@@ -10,13 +10,13 @@ exports.getAllGenres = async (req, res) => {
 }
 
 exports.createGenre = async (req, res) => {
-    const { name } = req.body;
+    const { name, description } = req.body;
     try {
         if (!name) {
             return res.status(400).json({ message: "El nombre es obligatorio" });
         }
-        const newGenreId = await Genre.create(name);
-        res.status(201).json({ message: "Genero creado", id: newGenreId });
+        const newGenreId = await Genre.create(name, description || null);
+        res.status(201).json({ id: newGenreId, name, description });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -37,14 +37,14 @@ exports.getGenreById = async (req, res) => {
 
 exports.updateGenre = async (req, res) => {
     const { id } = req.params;
-    const data = req.body;
+    const { name, description } = req.body;
 
     try {
-        const updated = await Genre.update(id, data);
+        const updated = await Genre.update(id, { name, description });
         if (!updated) {
             return res.status(404).json({ message: "Género no encontrado" });
         }
-        res.json({ message: "Género actualizado" });
+        res.json({ id, name, description });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
