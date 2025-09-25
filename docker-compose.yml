@@ -1,0 +1,134 @@
+services:
+  # --- Frontend UI ---
+  frontend:
+    build: ./pagina
+    container_name: frontend-app
+    restart: always
+    ports:
+      - "8080:80"
+
+  # --- API Gateway ---
+  gateway-service:
+    build: ./gateway-service
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      # --- Variables para TU Gateway Service ---
+      PORT: 3000
+      JWT_SECRET: aK9$!sF8&zP@vT2#bN7gH5jR3cE6qW4yU1iO0pL*mK(jI9hG7fD5sA2)z
+      AUTH_SERVICE_URL: http://authentication-service:4001
+      USER_SERVICE_URL: http://use-service:4002
+      CONTENT_SERVICE_URL: http://content-service:4003
+    depends_on:
+      - authentication-service
+      - user-service
+      - content-service
+
+  # --- Servicio de Autenticación ---
+  authentication-service:
+    build: ./authentication-service
+    container_name: auth-node-service
+    restart: always
+    environment:
+      # --- Variables para TU Authentication Service ---
+      PORT: 4001
+      JWT_SECRET: aK9$!sF8&zP@vT2#bN7gH5jR3cE6qW4yU1iO0pL*mK(jI9hG7fD5sA2)z
+      JWT_REFRESH_SECRET: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      USERS_SERVICE_URL: "http://user-service:4002/api"
+      DB_HOST: db-authentication
+      DB_USER: root
+      DB_PASSWORD: 40499335aB
+      DB_NAME: authentication_service 
+      DB_PORT: 3306
+    depends_on:
+      db-authentication: { condition: service_healthy }
+
+  # --- Servicio de Usuario ---
+  user-service:
+    build: ./user-service
+    container_name: user-node-service
+    restart: always
+    environment:
+      # --- Variables para TU User Service ---
+      NODE_ENV: dotenv
+      PORT: 4002
+      DB_HOST: db-user
+      DB_USER: root
+      DB_PASSWORD: 40499335aB
+      DB_NAME: user_db
+      DB_PORT: 3306
+      ALLOWED_ORIGINS: "*"
+    depends_on:
+      db-user: { condition: service_healthy }
+
+  # --- Servicio de Contenido ---
+  content-service:
+    build: ./content-service
+    container_name: content-node-service
+    restart: always
+    environment:
+      # --- Variables para TU Content Service ---
+      PORT: 4003
+      DB_HOST: db-content
+      DB_USER: root
+      DB_PASS: 40499335aB 
+      DB_NAME: content_db
+      DB_PORT: 3306
+    depends_on:
+      db-content: { condition: service_healthy }
+
+  # --- Bases de Datos ---
+  db-authentication:
+    image: mysql:8.0
+    container_name: auth-mysql-db
+    restart: always
+    environment:
+      # --- Variable OBLIGATORIA para la IMAGEN DE MYSQL ---
+      MYSQL_ROOT_PASSWORD: 40499335aB
+    volumes:
+      - ./db-authentication-service:/docker-entrypoint-initdb.d
+      - auth-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p40499335aB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db-user:
+    image: mysql:8.0
+    container_name: user-mysql-db
+    restart: always
+    environment:
+      # --- Variable OBLIGATORIA para la IMAGEN DE MYSQL ---
+      MYSQL_ROOT_PASSWORD: 40499335aB
+    volumes:
+      - ./db-user-service:/docker-entrypoint-initdb.d
+      - user-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p40499335aB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db-content:
+    image: mysql:8.0
+    container_name: content-mysql-db
+    restart: always
+    environment:
+      # --- Variable OBLIGATORIA para la IMAGEN DE MYSQL ---
+      MYSQL_ROOT_PASSWORD: 40499335aB
+    volumes:
+      - ./db-content-service:/docker-entrypoint-initdb.d
+      - content-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p40499335aB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  auth-db-data:
+  user-db-data:
+  content-db-data:
