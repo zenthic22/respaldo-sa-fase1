@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import genreApi from "../genreApi";
 import { Container, Table, Button, Form, Modal } from "react-bootstrap";
 
 const GenresAdmin = () => {
@@ -10,7 +10,7 @@ const GenresAdmin = () => {
 
   const fetchGenres = async () => {
     try {
-      const res = await axios.get("http://localhost:3002/api/genres");
+      const res = await genreApi.get("/genres");
       setGenres(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Error cargando géneros:", err.message);
@@ -27,7 +27,7 @@ const GenresAdmin = () => {
     if (!newGenre.trim()) return;
 
     try {
-      const res = await axios.post("http://localhost:3002/api/genres", {
+      const res = await genreApi.post("/genres", {
         name: newGenre,
         description: newDescription || null,
       });
@@ -49,7 +49,7 @@ const GenresAdmin = () => {
       if (Array.isArray(data)) {
         for (const genre of data) {
           try {
-            const res = await axios.post("http://localhost:3002/api/genres", genre);
+            const res = await genreApi.post("/genres", genre);
             setGenres((prev) => [...prev, res.data]);
           } catch (error) {
             console.error(`Error al guardar genero ${genre.name}: `, error.message);
@@ -66,7 +66,7 @@ const GenresAdmin = () => {
 
   const deleteGenre = async (id) => {
     try {
-      await axios.delete(`http://localhost:3002/api/genres/${id}`);
+      await genreApi.delete(`/genres/${id}`);
       setGenres(genres.filter((g) => g.id !== id));
     } catch (err) {
       console.error("Error eliminando género:", err.message);
@@ -76,8 +76,8 @@ const GenresAdmin = () => {
   const saveEdit = async () => {
     if (!editGenre) return;
     try {
-      const res = await axios.put(
-        `http://localhost:3002/api/genres/${editGenre.id}`,
+      const res = await genreApi.put(
+        `/genres/${editGenre.id}`,
         { name: editGenre.name, description: editGenre.description }
       );
       setGenres(genres.map((g) => (g.id === editGenre.id ? res.data : g)));
