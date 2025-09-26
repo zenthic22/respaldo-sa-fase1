@@ -155,3 +155,5 @@ CREATE TABLE report_actions (
   FOREIGN KEY (report_id) REFERENCES user_reports(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+ALTER TABLE subscription_payments
+ADD UNIQUE KEY uq_provider_ref (provider, provider_ref);
