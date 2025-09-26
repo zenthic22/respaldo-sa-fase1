@@ -1,18 +1,25 @@
+// server.js
+require('dotenv').config();
 const app = require('./app');
-const dotenv = require('dotenv');
-const db = require('./config/db');
-
-dotenv.config()
+const mongoose = require('./config/db'); // este archivo ya hace mongoose.connect(...)
 
 const PORT = process.env.PORT || 3002;
 
-db.getConnection()
-    .then(() => {
-        console.log('Connected to the database');
-        app.listen(PORT, () => {
-            console.log(`Server levantado en el puerto ${PORT}`);
-        });
-    })
-    .catch((error) => {
-        console.error('Fallo en la conexion a la base de datos: ', error);
-    });
+mongoose.connection.once('open', () => {
+  console.log('MongoDB conectado');
+  app.listen(PORT, () => {
+    console.log(`Server levantado en el puerto ${PORT}`);
+  });
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('Error de conexión a MongoDB:', err);
+  process.exit(1);
+});
+
+// Shutdown limpio
+process.on('SIGINT', async () => {
+  await mongoose.connection.close();
+  console.log('MongoDB desconectado por SIGINT');
+  process.exit(0);
+});

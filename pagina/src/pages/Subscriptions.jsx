@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Container, Card, Button, Row, Col, Alert, Modal, Form, Spinner } from "react-bootstrap";
 import { useAuth } from "../Auth";
-import axios from "axios";
+import subs from "../subsApi";
 import { useStripe, useElements, CardNumberElement, CardExpiryElement, CardCvcElement } from "@stripe/react-stripe-js";
 
 const CARD_ELEMENT_OPTIONS = {
@@ -29,7 +29,7 @@ const Subscriptions = () => {
 
   const fetchSubscriptions = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:3001/api/subscriptions/user/${user.id}`);
+      const { data } = await subs.get(`/subscriptions/user/${user.id}`);
       setSubscriptions(data);
     } catch (error) {
       console.error(error);
@@ -73,7 +73,7 @@ const Subscriptions = () => {
 
       // 2) Crear/confirmar PaymentIntent (backend crea sub PENDING y la activará al aprobar)
       const idempotency_key = `intent-PREMIUM_MONTHLY-${user.id}-${Date.now()}`;
-      const { data } = await axios.post("http://localhost:3001/api/payments/intent", {
+      const { data } = await subs.post("/payments/intent", {
         userId: user.id,
         plan_code: "PREMIUM_MONTHLY",
         payment_method_id: paymentMethod.id,
@@ -119,7 +119,7 @@ const Subscriptions = () => {
 
   const cancelSubscription = async (subscriptionId) => {
     try {
-      await axios.put(`http://localhost:3001/api/subscriptions/${subscriptionId}/cancel`);
+      await subs.put(`/subscriptions/${subscriptionId}/cancel`);
       login({
         accessToken: localStorage.getItem("accessToken"),
         refreshToken: localStorage.getItem("refreshToken"),

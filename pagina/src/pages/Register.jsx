@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Form, Button, Container, Alert, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -29,7 +29,7 @@ const Register = () => {
     useEffect(() => {
         const fetchRoles = async () => {
             try {
-                const res = await axios.get("http://localhost:3001/api/roles");
+                const res = await api.get("/roles");
                 setRoles(res.data);
             } catch (error) {
                 console.error("Error al cargar roles: ", error);
@@ -49,7 +49,7 @@ const Register = () => {
         setSuccess("");
 
         try {
-            await axios.post("http://localhost:4001/api/auth/register", formData);
+            await api.post("/auth/register", formData);
             setSuccess("Usuario registrado con exito!!");
             setTimeout(() => navigate("/"), 2000);
         } catch (error) {
